@@ -21,7 +21,6 @@ const Sidebar = () => {
           <Menu className="hover:cursor-pointer" size={26} />
         </button>
 
-        {/* Links */}
         <div className="mt-10 flex flex-col space-y-10">
           <Link
             to="/admin"
@@ -32,7 +31,7 @@ const Sidebar = () => {
           </Link>
 
           <Link
-            to="/student"
+            to="/intern"
             className="flex items-center gap-4 hover:text-blue-400 transition duration-300"
           >
             <Users size={22} />
@@ -53,8 +52,8 @@ const Sidebar = () => {
       <div className="mb-6 text-sm opacity-70">
         {isOpen && (
           <div className="border-t border-gray-700 pt-4 text-center">
-            © {new Date().getFullYear()} Appclick
-          </div> 
+            © {new Date().getFullYear()} TrackMyStack
+          </div>
         )}
       </div>
     </div>

@@ -1,8 +1,8 @@
-import React from 'react';
+import React from "react";
 
-export default function Card({ children, className = '', onClick }) {
+export default function Card({ children, className = "", onClick }) {
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`bg-slate-900 rounded-2xl border border-slate-800 ${className}`}
     >

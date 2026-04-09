@@ -1,8 +1,7 @@
-import React, { useRef, useState,  } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDatabase } from "../../context/DatabaseContext";
 import {
-  LogOut,
   Clock,
   CheckCircle2,
   User,
@@ -17,7 +16,8 @@ import {
   Mail,
   FileText,
   Briefcase,
-  Link, // <-- Added Link icon for the share button
+  Link,
+  BookOpen,
 } from "lucide-react";
 
 import Card from "../../components/shared/Card";
@@ -32,35 +32,40 @@ const formatUrl = (url) => {
     : `https://${url}`;
 };
 
-export default function StudentDashboard() {
-  const { courseKey, id } = useParams();
+export default function InternDashboard() {
   const navigate = useNavigate();
+  // 🌟 Matches the export from DatabaseContext exactly
   const { db, updateStudentProfile } = useDatabase();
   const fileInputRef = useRef(null);
 
-  const course = db.courses[courseKey];
-  const student = course?.students.find((s) => s.id === id);
+  // 🌟 READ SESSION FROM LOCAL STORAGE INSTEAD OF URL PARAMS
+  const companyId = localStorage.getItem("activeCompanyId");
+  const internId = localStorage.getItem("activeInternId");
 
-  const [bio, setBio] = useState(student?.bio || "");
+  // FIX: Added optional chaining to `db` in case the context is still loading
+  const company = db?.companies?.[companyId];
+  const intern = company?.interns?.find((i) => i.id === internId);
+
+  const [bio, setBio] = useState(intern?.bio || "");
   const [isSavingBio, setIsSavingBio] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isEditingSocials, setIsEditingSocials] = useState(false);
-  const [copied, setCopied] = useState(false); // <-- Added copy state
+  const [copied, setCopied] = useState(false);
 
   const [socials, setSocials] = useState({
-    email: student?.email || "",
-    whatsapp: student?.phone || "",
-    twitter: student?.socialHandles?.twitter || "",
-    linkedin: student?.socialHandles?.linkedin || "",
+    email: intern?.email || "",
+    whatsapp: intern?.phone || "",
+    twitter: intern?.socialHandles?.twitter || "",
+    linkedin: intern?.socialHandles?.linkedin || "",
   });
 
-  if (!student) {
+  if (!intern) {
     return (
       <div className="p-8 max-w-3xl mx-auto pt-20 min-h-screen">
         <EmptyState
           icon={User}
           title="Account Not Found"
-          message="We could not locate your student records. Please log in again."
+          message="We could not locate your intern records. Please log in again."
           actionButton={
             <button
               onClick={() => navigate("/")}
@@ -74,11 +79,12 @@ export default function StudentDashboard() {
     );
   }
 
-  const isGraded = student.finalPerformanceScore !== null;
+  // 🌟 FIX: Use != null to safely catch BOTH undefined and null values
+  const isGraded = intern.finalPerformanceScore != null;
 
-  // <-- Added handleCopyLink function
   const handleCopyLink = () => {
-    const publicUrl = `${window.location.origin}/public/${courseKey}/${student.id}`;
+    // 🌟 KEEPING THE UUID FOR THE PUBLIC URL (Secure routing)
+    const publicUrl = `${window.location.origin}/public/intern/${companyId}/${intern.id}`;
     navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -89,7 +95,7 @@ export default function StudentDashboard() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        updateStudentProfile(courseKey, student.id, { avatar: reader.result });
+        updateStudentProfile(companyId, intern.id, { avatar: reader.result });
       };
       reader.readAsDataURL(file);
     }
@@ -97,16 +103,16 @@ export default function StudentDashboard() {
 
   const handleBioSave = () => {
     setIsSavingBio(true);
-    updateStudentProfile(courseKey, student.id, { bio: bio });
+    updateStudentProfile(companyId, intern.id, { bio: bio });
     setTimeout(() => setIsSavingBio(false), 500);
   };
 
   const handleSaveSocials = () => {
-    updateStudentProfile(courseKey, student.id, {
+    updateStudentProfile(companyId, intern.id, {
       email: socials.email,
       phone: socials.whatsapp,
       socialHandles: {
-        ...(student.socialHandles || {}),
+        ...(intern.socialHandles || {}),
         twitter: socials.twitter,
         linkedin: socials.linkedin,
       },
@@ -120,24 +126,26 @@ export default function StudentDashboard() {
  PROFESSIONAL CURRICULUM VITAE
 =========================================
 
-Name: ${student.name}
-Email: ${student.email || "Not Provided"}
-WhatsApp: ${student.phone || "Not Provided"}
-LinkedIn: ${student.socialHandles?.linkedin || "Not Provided"}
-Twitter: ${student.socialHandles?.twitter || "Not Provided"}
-GitHub: @${student.githubUsername}
+Name: ${intern.name}
+Course Track: ${intern.course || "Not Assigned"}
+Academy ID: ${intern.academyId}
+Email: ${intern.email || "Not Provided"}
+WhatsApp: ${intern.phone || "Not Provided"}
+LinkedIn: ${intern.socialHandles?.linkedin || "Not Provided"}
+Twitter: ${intern.socialHandles?.twitter || "Not Provided"}
+GitHub: @${intern.githubUsername || "Not Provided"}
 
-Calculated Experience: ${student.yearsOfExperience || "0"} Years
+Calculated Experience: ${intern.yearsOfExperience || "0"} Years
 
 -----------------------------------------
 PROFESSIONAL SUMMARY:
 -----------------------------------------
-${bio || student.bio || "No summary provided."}
+${bio || intern.bio || "No summary provided."}
 
 -----------------------------------------
 TECHNICAL SKILLS:
 -----------------------------------------
-${student.skills?.join(", ") || "No skills listed."}
+${intern.skills?.join(", ") || "No skills listed."}
 
 -----------------------------------------
 ASSESSMENT SCORES:
@@ -145,10 +153,10 @@ ASSESSMENT SCORES:
 ${
   isGraded
     ? `
-Exam Score: ${student.examScore}/100
-Projects: ${student.assignmentScore}/100
-Soft Skills: ${student.behaviorScore}/100
-FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
+Exam Score: ${intern.examScore}/100
+Projects: ${intern.assignmentScore}/100
+Soft Skills: ${intern.behaviorScore}/100
+FINAL PERFORMANCE RATING: ${intern.finalPerformanceScore}
 `
     : "Assessments currently under review by Hub Managers."
 }
@@ -160,7 +168,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${student.name.replace(/\s+/g, "_")}_TalentOS_CV.txt`;
+    link.download = `${intern.name.replace(/\s+/g, "_")}_TalentOS_CV.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -186,7 +194,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
               <X className="w-8 h-8" />
             </button>
             <img
-              src={student.avatar}
+              src={intern.avatar}
               alt="Profile Enlarged"
               className="w-full h-auto max-h-[85vh] object-cover object-center rounded-2xl shadow-2xl border border-slate-800"
             />
@@ -194,14 +202,13 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
         </div>
       )}
 
-      {/* --- NEW DYNAMIC HEADER SECTION --- */}
+      {/* --- HEADER SECTION --- */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b border-slate-800/50 pb-6 mb-8">
-        {/* Left Side: Dynamic Greeting */}
         <div>
-          {student.isNew ? (
+          {intern.isNew ? (
             <>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight">
-                Your Workspace, {student.name.split(" ")[0]} 🚀
+                Your Workspace, {intern.name.split(" ")[0]}
               </h1>
               <p className="text-slate-400 font-medium text-lg">
                 Setup your profile to get discovered.
@@ -210,22 +217,20 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
           ) : (
             <>
               <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight">
-                Welcome back, {student.name.split(" ")[0]}
+                Welcome back, {intern.name.split(" ")[0]}
               </h1>
               <p className="text-indigo-400 font-medium text-lg flex items-center gap-2 mt-1">
                 Keep building.{" "}
                 <span className="text-slate-500 text-sm font-normal px-2 border-l border-slate-700">
-                  {course.name}
+                  {company?.companyName || "Workspace"}
                 </span>
               </p>
             </>
           )}
         </div>
 
-        {/* Right Side: Badges & Actions */}
         <div className="flex items-center gap-3 bg-slate-900/50 p-1.5 rounded-xl border border-slate-800/50 backdrop-blur-sm w-fit h-fit">
-          {/* Live Status Badge */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-950 rounded-lg border border-slate-800 shadow-inner hidden sm:flex">
+          <div className=" items-center gap-2 px-3 py-2 bg-slate-950 rounded-lg border border-slate-800 shadow-inner hidden sm:flex">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
@@ -235,7 +240,6 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
             </span>
           </div>
 
-          {/* Share Profile Button */}
           <button
             onClick={handleCopyLink}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${
@@ -256,7 +260,6 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
           </button>
         </div>
       </div>
-      {/* --- END DYNAMIC HEADER SECTION --- */}
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Left Column: Identity & Customization */}
@@ -264,7 +267,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
           <Card className="p-6 flex flex-col items-center text-center">
             <div className="relative group mb-4">
               <img
-                src={student.avatar}
+                src={intern.avatar}
                 alt="Profile"
                 onClick={() => setIsImageModalOpen(true)}
                 className="w-32 h-32 rounded-full border-4 border-slate-700 object-cover object-center shadow-xl group-hover:border-emerald-500/50 transition-colors cursor-pointer"
@@ -289,17 +292,24 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
               />
             </div>
 
-            <h2 className="text-xl font-bold text-white mb-1">
-              {student.name}
-            </h2>
-            <p className="text-slate-400 font-mono text-sm mb-4 bg-slate-950 px-3 py-1 rounded-md border border-slate-800">
-              ID: {student.academyId}
-            </p>
+            <h2 className="text-xl font-bold text-white mb-1">{intern.name}</h2>
+
+            <div className="flex flex-col items-center gap-2 mb-4">
+              <p className="text-slate-400 font-mono text-sm bg-slate-950 px-3 py-1 rounded-md border border-slate-800">
+                ID: {intern.academyId}
+              </p>
+              {intern.course && (
+                <div className="flex items-center gap-1.5 text-sm font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                  <BookOpen className="w-4 h-4" />
+                  {intern.course}
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-6">
               <Briefcase className="w-4 h-4 text-indigo-400" />
               <span className="text-xs font-bold text-indigo-300 uppercase">
-                {student.yearsOfExperience} Years Experience
+                {intern.yearsOfExperience} Years Experience
               </span>
             </div>
 
@@ -308,7 +318,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
                 Your Skills
               </h3>
               <div className="flex flex-wrap gap-2">
-                {student.skills?.map((skill) => (
+                {intern.skills?.map((skill) => (
                   <SkillBadge key={skill} skill={skill} />
                 ))}
               </div>
@@ -326,7 +336,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
           {isGraded && (
             <button
               onClick={() =>
-                navigate(`/public/student/${courseKey}/${student.id}`)
+                navigate(`/public/intern/${companyId}/${intern.id}`)
               }
               className="w-full flex items-center justify-center gap-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 font-bold py-3.5 px-6 rounded-xl transition"
             >
@@ -361,7 +371,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
               <div className="flex justify-end">
                 <button
                   onClick={handleBioSave}
-                  disabled={isSavingBio || bio === student.bio}
+                  disabled={isSavingBio || bio === (intern.bio || "")}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-2.5 px-6 rounded-xl transition active:scale-95"
                 >
                   <Save className="w-4 h-4" />{" "}
@@ -529,7 +539,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
                     Your verified grading breakdown.
                   </p>
                 </div>
-                <PerformanceBadge score={student.finalPerformanceScore} />
+                <PerformanceBadge score={intern.finalPerformanceScore} />
               </div>
 
               <div className="space-y-4 relative z-10">
@@ -538,7 +548,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
                     Final Exam (40%)
                   </p>
                   <p className="text-2xl font-black text-white">
-                    {student.examScore}
+                    {intern.examScore}
                     <span className="text-slate-500 text-lg">/100</span>
                   </p>
                 </div>
@@ -547,7 +557,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
                     Projects (30%)
                   </p>
                   <p className="text-2xl font-black text-white">
-                    {student.assignmentScore}
+                    {intern.assignmentScore}
                     <span className="text-slate-500 text-lg">/100</span>
                   </p>
                 </div>
@@ -556,7 +566,7 @@ FINAL PERFORMANCE RATING: ${student.finalPerformanceScore}
                     Soft Skills (30%)
                   </p>
                   <p className="text-2xl font-black text-white">
-                    {student.behaviorScore}
+                    {intern.behaviorScore}
                     <span className="text-slate-500 text-lg">/100</span>
                   </p>
                 </div>

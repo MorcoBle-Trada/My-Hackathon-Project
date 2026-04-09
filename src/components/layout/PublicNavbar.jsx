@@ -12,26 +12,20 @@ export default function PublicNavbar() {
           <BrainCircuit className="w-6 h-6 text-indigo-400" />
         </div>
         <span className="text-xl font-extrabold text-white tracking-tight">
-          TalentOS
+          TrackMyStack
         </span>
       </Link>
 
       <div className="flex items-center gap-4 sm:gap-6">
-        <Link
-          to="/public"
-          className="hidden sm:block text-sm font-medium text-slate-300 hover:text-white transition"
-        >
-          Programs
-        </Link>
         <button
-          /* 🌟 UPDATED: Now points correctly to /student */
-          onClick={() => navigate("/student")}
+          /* UPDATED: Now points correctly to /intern */
+          onClick={() => navigate("/intern")}
           className="text-sm font-bold bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg border border-slate-700 transition"
         >
-          Student Portal
+          Intern Portal
         </button>
         <button
-          /* 🌟 UPDATED: Now points correctly to /admin */
+          /* Admin remains the same, but you could change the text to 'Company Login' if desired */
           onClick={() => navigate("/admin")}
           className="text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg shadow-lg shadow-indigo-500/20 transition active:scale-95"
         >

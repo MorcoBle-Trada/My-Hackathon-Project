@@ -1,10 +1,10 @@
-import React from 'react';
+import React from "react";
 
-export default function EmptyState({ 
-  icon: Icon, 
-  title = "No Data Found", 
-  message = "There is currently nothing to display here.", 
-  actionButton = null 
+export default function EmptyState({
+  icon: Icon,
+  title = "No Data Found",
+  message = "There is currently nothing to display here.",
+  actionButton = null,
 }) {
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-700/50 rounded-2xl bg-[#1e293b]/50">

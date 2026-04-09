@@ -12,7 +12,6 @@ export default function PerformanceBadge({ score }) {
     );
   }
 
-  // 2. Logic to determine Icon and Color based on the score
   const numScore = parseFloat(score);
 
   let Icon = Star;
